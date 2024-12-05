@@ -103,6 +103,7 @@ const groupsContainer = document.getElementById('groupsContainer');
       groups.forEach(group => {
         const groupDiv = document.createElement('div');
         groupDiv.textContent = group.group_name;
+        groupDiv.classList.add('group-item'); 
         groupsContainer.appendChild(groupDiv);
       });
     } else {
