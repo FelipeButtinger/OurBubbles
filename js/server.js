@@ -201,5 +201,33 @@ app.listen(3000, () => {
   console.log('Servidor rodando na porta 3000');
 });
 
+// Rota para listar grupos do usuário logado
+app.get('/userGroups', authenticateToken, (req, res) => {
+  const { user } = req.user;
+
+  db.query(
+    `SELECT g.group_name 
+     FROM groups g 
+     JOIN users_groups ug ON g.id = ug.group_id 
+     JOIN users u ON u.id = ug.user_id 
+     WHERE u.username = ?`,
+    [user],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: 'Erro ao obter grupos do usuário' });
+      }
+
+      res.json(results);
+    }
+  );
+  
+});
+
+
+
+
+
+
+
 
 

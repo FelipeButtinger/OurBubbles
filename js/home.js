@@ -85,6 +85,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     })
 
+// NUM SEI SE TA PEGANDO
+const groupsContainer = document.getElementById('groupsContainer');
+  try {
+    // Requisição para obter os grupos do usuário logado
+    const response = await fetch('http://localhost:3000/userGroups', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`  // Corrigido aqui
+      }
+    });
+
+    if (response.ok) {
+      const groups = await response.json();
+
+      // Renderiza os grupos em divs
+      groups.forEach(group => {
+        const groupDiv = document.createElement('div');
+        groupDiv.textContent = group.group_name;
+        groupsContainer.appendChild(groupDiv);
+      });
+    } else {
+      groupsContainer.textContent = 'Erro ao carregar grupos.';
+    }
+  } catch (error) {
+    console.error('Erro:', error);
+    groupsContainer.textContent = 'Erro ao carregar grupos.';
+  }
 });
 
-
+// TEsta aqui dai Div id="grupsContainer"
