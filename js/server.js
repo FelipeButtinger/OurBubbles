@@ -200,7 +200,37 @@ app.delete('/user', authenticateToken, (req, res) => {
 app.listen(3000, () => {
   console.log('Servidor rodando na porta 3000');
 });
+app.post('/api/verify-group', async (req, res) => {
+  const { groupName, password } = req.body;
 
+  if (!groupName || !password) {
+    return res.status(400).json({ message: 'Nome do grupo e senha são obrigatórios.' });
+  }
+
+  try {
+    // Consulta no banco de dados para encontrar o grupo pelo nome
+    const query = 'SELECT * FROM groups WHERE group_name = ?';  // Correção aqui
+    const [result] = await pool.query(query, [groupName]);
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'Grupo não encontrado.' });
+    }
+
+    const group = result[0];
+
+    // Comparar a senha fornecida com a senha no banco (usando bcrypt, caso esteja criptografada)
+    const isPasswordValid = await bcrypt.compare(password, group.password);
+    
+    if (isPasswordValid) {
+      return res.json({ success: true });
+    } else {
+      return res.json({ success: false });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Erro ao verificar as credenciais.' });
+  }
+});
 // Rota para listar grupos do usuário logado
 app.get('/userGroups', authenticateToken, (req, res) => {
   const { user } = req.user;

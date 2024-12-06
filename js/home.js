@@ -84,7 +84,80 @@ document.addEventListener('DOMContentLoaded', async () => {
             messageElement.textContent = errorMessage;
         }
     })
-
+    document.getElementById('groupLoginForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); // Impede o envio padrão do formulário
+      
+      const groupName = document.getElementById("groupLoginName").value;
+      const username = userData.username; // Assume que userData.username está definido
+      const groupPassword = document.getElementById("groupLoginPassword").value; // Pegando a senha inserida no formulário
+      
+      console.log("Teste:", username);
+      
+      try {
+          // Buscar o ID do usuário
+          const idResponse = await fetch(`http://localhost:3000/userId?username=${encodeURIComponent(username)}`, {
+              method: 'GET',
+              headers: { 'Content-Type': 'application/json' }
+          });
+      
+          const idData = await idResponse.json(); // Extrai o corpo da resposta como JSON
+          console.log(idData);
+      
+          // Buscar o ID do grupo
+          console.log("Teste:", groupName);
+          const groupResponse = await fetch(`http://localhost:3000/groupId?group=${encodeURIComponent(groupName)}`, {
+              method: 'GET',
+              headers: { 'Content-Type': 'application/json' }
+          });
+      
+          let idGroup;
+          const contentType = groupResponse.headers.get('Content-Type');
+          if (contentType && contentType.includes('application/json')) {
+              idGroup = await groupResponse.json();
+              console.log(idGroup);
+          } else {
+              const errorText = await groupResponse.text();
+              console.error('Erro ao acessar o grupo:', errorText);
+              document.getElementById('message').textContent = errorText || 'Erro ao acessar o grupo.';
+              return; // Sai da função caso a resposta não seja JSON
+          }
+      
+          // Verificar se a senha do grupo está correta
+          const passwordCheckResponse = await fetch('http://localhost:3000/api/verify-group', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ groupName: groupName, password: groupPassword })
+          });
+          
+          const passwordCheckData = await passwordCheckResponse.json();
+          if (passwordCheckData.success) {
+              // Se a senha estiver correta, continuar com o registro no grupo
+              messageElement.textContent = 'Grupo registrado com sucesso!';
+              const response = await fetch('http://localhost:3000/relationGroup', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ groupId: idGroup.id.id, userId: idData.id.id, admin: false })
+              });
+      
+              const data = await response.json();
+      
+              if (response.ok) {
+                  console.log('Grupo acessado com sucesso:', data);
+                  document.getElementById('message').textContent = 'Você entrou no grupo com sucesso!';
+              } else {
+                  console.error('Erro ao acessar o grupo:', data);
+                  document.getElementById('message').textContent = data.error || 'Erro ao entrar no grupo.';
+              }
+          } else {
+              // Se a senha estiver incorreta
+              document.getElementById('message').textContent = 'Senha incorreta. Tente novamente.';
+          }
+      } catch (error) {
+          console.error('Erro na requisição:', error);
+          document.getElementById('message').textContent = 'Erro na requisição. Tente novamente.';
+      }
+  });
+    
 // NUM SEI SE TA PEGANDO
 const groupsContainer = document.getElementById('groupsContainer');
   try {
@@ -116,3 +189,5 @@ const groupsContainer = document.getElementById('groupsContainer');
 });
 
 // TEsta aqui dai Div id="grupsContainer"
+
+
