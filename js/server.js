@@ -17,7 +17,7 @@ app.use(bodyParser.json()); // Middleware para processar o corpo das requisiçõ
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root', // Ajuste conforme necessário
-  password: '', // Insira a senha se aplicável
+  password: 'root', // Insira a senha se aplicável
   database: 'ourbubbles' // Nome do banco de dados
 });
 
@@ -200,35 +200,42 @@ app.delete('/user', authenticateToken, (req, res) => {
 app.listen(3000, () => {
   console.log('Servidor rodando na porta 3000');
 });
+
 app.post('/api/verify-group', async (req, res) => {
   const { groupName, password } = req.body;
 
+  // Verificar se os campos obrigatórios foram fornecidos
   if (!groupName || !password) {
-    return res.status(400).json({ message: 'Nome do grupo e senha são obrigatórios.' });
+    return res.status(400).json({ error: 'Nome do grupo e senha são obrigatórios.' });
   }
 
   try {
-    // Consulta no banco de dados para encontrar o grupo pelo nome
-    const query = 'SELECT * FROM groups WHERE group_name = ?';  // Correção aqui
-    const [result] = await pool.query(query, [groupName]);
+    // Consulta ao banco de dados para buscar o grupo pelo nome
+    db.query('SELECT password FROM groups WHERE group_name = ?', [groupName], async (err, result) => {
+      if (err) {
+        console.error('Erro ao consultar o banco de dados:', err);
+        return res.status(500).json({ error: 'Erro no servidor.' });
+      }
 
-    if (result.length === 0) {
-      return res.status(404).json({ message: 'Grupo não encontrado.' });
-    }
+      if (result.length === 0) {
+        return res.status(404).json({ error: 'Grupo não encontrado.' });
+      }
 
-    const group = result[0];
+      // Obter a senha armazenada no banco
+      const hashedPassword = result[0].password;
 
-    // Comparar a senha fornecida com a senha no banco (usando bcrypt, caso esteja criptografada)
-    const isPasswordValid = await bcrypt.compare(password, group.password);
-    
-    if (isPasswordValid) {
-      return res.json({ success: true });
-    } else {
-      return res.json({ success: false });
-    }
+      // Comparar a senha fornecida com a armazenada
+      const isPasswordValid = await bcrypt.compare(password, hashedPassword);
+
+      if (isPasswordValid) {
+        return res.json({ success: true, message: 'Grupo verificado com sucesso.' });
+      } else {
+        return res.status(401).json({ success: false, error: 'Senha incorreta.' });
+      }
+    });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Erro ao verificar as credenciais.' });
+    console.error('Erro ao verificar as credenciais:', error);
+    return res.status(500).json({ error: 'Erro ao verificar as credenciais.' });
   }
 });
 // Rota para listar grupos do usuário logado

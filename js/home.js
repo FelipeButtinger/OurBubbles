@@ -90,6 +90,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const groupName = document.getElementById("groupLoginName").value;
       const username = userData.username; // Assume que userData.username está definido
       const groupPassword = document.getElementById("groupLoginPassword").value; // Pegando a senha inserida no formulário
+      console.log(groupPassword)
       
       console.log("Teste:", username);
       
